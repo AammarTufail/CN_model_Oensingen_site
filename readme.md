@@ -235,11 +235,13 @@ We need to prepare following data for the CN-Model:
 
 
 ### Forcing data preparation
+
 The forcing data is prepared from the original dataset by extracting the relevant variables based on the daily measurement file or the half-hourly measurement file. The data is then aggregated to daily values in case of the half-hourly measurement file. 
 
 > We will be using the half-hourly measurement file for the temperature data preparation.
 
 #### temp, tmin and tmax
+
 The temperature data is prepared by extracting the relevant variables from the half-hourly measurement file. 
 - `TA_F` is used which is `Air temperature, consolidated from TA_F_MDS and TA_ERA. TA_F_MDS used if TA_F_MDS_QC is 0 or 1, otherwise TA_ERA is used.`
 The data is then aggregated to daily values by taking the mean of the half-hourly values for `temp`, and the minimum and maximum values for `tmin` and `tmax`.
@@ -247,6 +249,7 @@ The data is then aggregated to daily values by taking the mean of the half-hourl
 Here is the [script](./scripts/01_temp_tmin_tmax.R) to prepare the temperature data.
 
 #### vpd
+
 `vpd` (Daytime average Vapour Pressure Deficit) can be extracted using this [script](./scripts/02_vpd.R).
 
 #### ppfd

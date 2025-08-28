@@ -13,13 +13,13 @@ suppressPackageStartupMessages({
   library(purrr)
 })
 
-# # install CN-model
-# devtools::install_github(
-#   "stineb/rsofun@v1.0_cnmodel",
-#   ref = "cnmodel",
-#   upgrade = "never",
-#   force = TRUE
-# )
+# install CN-model
+devtools::install_github(
+  "stineb/rsofun@v1.0_cnmodel",
+  ref = "cnmodel",
+  upgrade = "never",
+  force = TRUE
+)
 library(rsofun)
 
 # load drivers data
@@ -28,8 +28,12 @@ colnames(drivers$forcing[[1]])
 str(drivers$forcing[[1]])
 
 # check drivers consistency with FluxDataKit
-drivers_fdk <- read_rds("data/FLX_CH-Oe2_FLUXNET2015_FULLSET_2004-2023_1-3/rsofun_driver_data_v3.4.2.rds")
-drivers_fdk <- drivers_fdk |> filter(sitename == "CH-Oe2") 
+# drivers_fdk <- read_rds("data/FLX_CH-Oe2_FLUXNET2015_FULLSET_2004-2023_1-3/rsofun_driver_data_v3.4.2.rds") # muhammad's
+drivers_fdk <- read_rds("~/data_2/FluxDataKit/v3.4/zenodo_upload/rsofun_driver_data_v3.4.2.rds") # beni's
+
+drivers_fdk <- drivers_fdk |> 
+  filter(sitename == "CH-Oe2") 
+
 tmp <- filter(drivers_fdk, sitename == "CH-Oe2")$forcing[[1]] |> 
   right_join(
     filter(drivers, sitename == "CH-Oe2")$forcing[[1]],
@@ -38,24 +42,25 @@ tmp <- filter(drivers_fdk, sitename == "CH-Oe2")$forcing[[1]] |>
     )
 
 # temperature: correct units, but inconsistent values - not our problem...
+# xxx beni: note that in rsofun_driver_data_v3.4.2.rds, 'temp' is daytime temperature.
 tmp |> 
   ggplot(aes(temp_fdk, temp_muh)) +
   geom_point(alpha = 0.3) +
   geom_abline(slope = 1, intercept = 0, linetype = "dotted")
 
-# vpd: wrong units
+# vpd: ok, but quite large differences
 tmp |> 
   ggplot(aes(vpd_fdk, vpd_muh)) +
   geom_point(alpha = 0.3) +
   geom_abline(slope = 1, intercept = 0, linetype = "dotted")
 
-# ppfd: wrong units
+# ppfd: looks good
 tmp |> 
   ggplot(aes(ppfd_fdk, ppfd_muh)) +
   geom_point(alpha = 0.3) +
   geom_abline(slope = 1, intercept = 0, linetype = "dotted")
 
-# fapar: not satisfyingly consistent
+# fapar: quite some differences but acceptable
 tmp |> 
   ggplot(aes(fapar_fdk, fapar_muh)) +
   geom_point(alpha = 0.3) +
@@ -64,8 +69,8 @@ tmp |>
 tmp |> 
   ggplot() +
   geom_line(aes(date, fapar_muh), color = "red") +
-  geom_line(aes(date, fapar_fdk))
-  
+  geom_line(aes(date, fapar_fdk)) +
+  xlim(as.Date("2004-01-01"), as.Date("2008-01-01"))
 
 # Check date range and completeness of forcing data
 forcing_data <- drivers$forcing[[1]]
@@ -101,6 +106,9 @@ if(length(incomplete_years) > 0) {
   cat("All years are complete\n")
 }
 
+# xxx beni: incompleteness because 29 Februar values of leap years are dropped 
+# from forcing. They are omitted anyways within rsofun as the model works with 
+# fixed 365-day years. Hence, don't worry about incompleteness.
 
 # check the data patterns in the forcing data
 vis_dat(drivers$forcing[[1]], warn_large_data = TRUE)
@@ -112,7 +120,7 @@ plot_forcing <- drivers$forcing[[1]] %>%
   ggplot(aes(x = date, y = value, color = variable)) +
   # highlight the area from 2021 to 2023
   geom_rect(aes(xmin = as.Date("2021-01-01"), xmax = as.Date("2023-12-31"), ymin = -Inf, ymax = Inf), 
-            fill = "#bde2ef", alpha = 0.2) +
+            fill = "#bde2ef", alpha = 0.2, color = NA) +
   geom_line(linewidth = 0.3) +
   facet_wrap(~variable, scales = "free_y", ncol = 3) +
   scale_x_date(date_labels = "%Y", date_breaks = "1 years") +
@@ -139,7 +147,6 @@ miss_plot <- drivers |>
 
 ggsave(here::here("fig/01_vis_miss_drivers.pdf"), miss_plot, width = 10, height = 6)
 miss_plot
-
 
 ## Run CNmodel
 # Define model parameters taken from p model script and other scripts
